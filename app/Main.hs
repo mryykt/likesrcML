@@ -2,6 +2,7 @@
 module Main (main) where
 import Language.Haskell.Exts
 import Data.List.Utils
+import System.Environment(getArgs)
 
 tag::String->String->String
 tag t b="<"++t++">"++b++"</"++t++">"
@@ -95,7 +96,7 @@ sexp=tag "exp" . sub
     sub (MDo _ ss)=tag "mdo_exp" undefined
     sub (Tuple _ b es)=tag "tuple" undefined
     sub (UnboxedSum _ i1 i2 e)=tag "unboxed_sum" undefined
-    sub (TupleSection _ b es)=tag "tuple_section" undefined 
+    sub (TupleSection _ b es)=tag "tuple_section" undefined
     sub (List _ es)=tag "list" ("["++join "," (map sub es)++"]")
     sub (ParArray _ es)=tag "paralell_array" undefined
     sub (Paren _ e)="("++sub e++")"
@@ -147,7 +148,7 @@ stype=tag "type" . sub
     sub (TyParen _ t)="("++sub t++")"
     sub _=undefined
 
-sbinds::Binds SrcSpanInfo->String 
+sbinds::Binds SrcSpanInfo->String
 sbinds=tag "binds" . sub
   where
     sub (BDecls _ ds)=tag "binding_group" (concatMap sd ds)
@@ -161,7 +162,7 @@ smp _=undefined
 sid::ImportDecl SrcSpanInfo->String
 sid id=(++"\n") $ tag "import_declaration" $ "import"++tag "import_module" mname
   where
-    (ModuleName _ mname) = importModule id 
+    (ModuleName _ mname) = importModule id
 
 sd::Decl SrcSpanInfo->String
 sd (FunBind _ ms)=(++"\n") $ concatMap (tag "fun_bind". sm) ms
@@ -177,4 +178,7 @@ ml (ParseOk (Module _ (Just _) mps ids ds))=tag "module" $concatMap smp mps++con
 ml _ = ""
 
 main :: IO ()
-main = putStr . ml =<< parseFile"app/Main.hs"
+main =do
+  l<-getArgs
+  if null l then return ()
+  else putStr . ml =<< parseFile (head l)
